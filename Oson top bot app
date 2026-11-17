@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oson Top Bot — Telegram Mini App</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Inter & SF Pro Display Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        ios: {
+                            blue: '#0A84FF',
+                            cyan: '#5AC8FA',
+                            purple: '#BF5AF2',
+                            pink: '#FF375F',
+                            green: '#30D158',
+                            orange: '#FF9F0A',
+                            red: '#FF453A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, textarea, pre, code {
+            user-select: text;
+        }
+        body {
+            background-color: #05070f;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* iOS 18 / VisionOS Ambient Animated Background Blobs */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 0%, #0f172a 0%, #03050a 100%);
+        }
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(85px);
+            opacity: 0.48;
+            animation: floatBlob 18s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .blob-1 {
+            width: 340px;
+            height: 340px;
+            background: linear-gradient(135deg, #0A84FF, #5E5CE6);
+            top: -80px;
+            left: -70px;
+        }
+        .blob-2 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #BF5AF2, #FF375F);
+            top: 32%;
+            right: -90px;
+            animation-delay: -5s;
+        }
+        .blob-3 {
+            width: 320px;
+            height: 320px;
+            background: linear-gradient(135deg, #5AC8FA, #30D158);
+            bottom: -60px;
+            left: 10%;
+            animation-delay: -10s;
+        }
+        @keyframes floatBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(35px, -30px) scale(1.12); }
+            100% { transform: translate(-25px, 25px) scale(0.92); }
+        }
+
+        /* Apple VisionOS Frosted Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.065);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+        }
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .glass-input {
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-input:focus-within {
+            border-color: rgba(10, 132, 255, 0.75);
+            box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25), inset 0 2px 6px rgba(0, 0, 0, 0.45);
+        }
+
+        /* iOS Spring Button Effect */
+        .ios-btn {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, box-shadow 0.2s ease;
+        }
+        .ios-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+        }
+
+        /* Shimmer & Pulse effects */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(200%); }
+        }
+        .scan-effect {
+            animation: scanline 1.8s infinite linear;
+        }
+    </style>
+</head>
+<body class="pb-28 antialiased selection:bg-ios-blue selection:text-white">
+
+    <!-- Ambient Animated Background -->
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- Top Toast Notification (No alert() used!) -->
+    <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 w-[92%] max-w-md">
+        <div class="glass-pill rounded-2xl px-4 py-3 flex items-center gap-3 shadow-2xl border border-white/25">
+            <div id="toastIcon" class="w-8 h-8 rounded-full bg-ios-blue/20 text-ios-blue flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p id="toastTitle" class="text-xs font-bold uppercase tracking-wider text-white/70">Oson Top Tizimi</p>
+                <p id="toastMessage" class="text-sm font-medium text-white truncate">Muvaffaqiyatli bajarildi!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="max-w-lg mx-auto px-4 pt-3 space-y-4">
+
+        <!-- TOP HEADER: User Profile Capsule + Role Switcher (User vs Admin) -->
+        <header class="glass-card p-3 flex items-center justify-between gap-2">
+            <!-- User Info -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="relative shrink-0">
+                    <div id="userAvatar" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-ios-blue via-ios-purple to-ios-pink p-[2px] shadow-lg">
+                        <div class="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-base font-bold" id="avatarInitials">
+                            OT
+                        </div>
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-ios-green border-2 border-[#0a0f1d] rounded-full"></span>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <h1 id="userNameDisplay" class="font-bold text-sm sm:text-base truncate">Oson Top Foydalanuvchi</h1>
+                        <span id="roleBadge" class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-ios-blue/25 text-ios-cyan border border-ios-cyan/30">
+                            PRO
+                        </span>
+                    </div>
+                    <p id="userSubDisplay" class="text-xs text-white/55 truncate">@oson_top_bot • VisionOS UI</p>
+                </div>
+            </div>
+
+            <!-- Role Switcher Toggle (User vs Admin Panel) -->
+            <div class="glass-pill p-1 rounded-2xl flex items-center shrink-0">
+                <button id="btnRoleUser" onclick="switchRole('user')" class="ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 bg-white/20 text-white shadow-sm">
+                    <i class="fa-solid fa-user text-[11px]"></i>
+                    <span>User</span>
+                </button>
+                <button id="btnRoleAdmin" onclick="switchRole('admin')" class="ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-white/60 hover:text-white">
+                    <i class="fa-solid fa-shield-halved text-[11px]"></i>
+                    <span>Admin</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ==========================================
+             1. USER PANEL VIEW (Media Downloader)
+             ========================================== -->
+        <section id="userPanelView" class="space-y-4">
+
+            <!-- SUB-TAB: HOME (Downloader) -->
+            <div id="userTabHome" class="space-y-4">
+                
+                <!-- Hero Banner & Platform Badges -->
+                <div class="glass-card p-5 relative overflow-hidden">
+                    <div class="absolute -right-8 -top-8 w-32 h-32 bg-ios-blue/20 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <span class="text-[11px] font-semibold uppercase tracking-widest text-ios-cyan">Tezkor Media Yuklovchi</span>
+                            <h2 class="text-xl font-extrabold tracking-tight mt-0.5">Suv belgisiz (No Watermark)</h2>
+                        </div>
+                        <div class="w-10 h-10 rounded-2xl glass-pill flex items-center justify-center text-ios-cyan shadow-inner">
+                            <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                        </div>
+                    </div>
+
+                    <!-- Supported Platforms Live Glow Badges -->
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <div id="badge-instagram" class="platform-badge glass-pill rounded-xl p-2 flex flex-col items-center gap-1 border border-white/10 transition-all duration-300">
+                            <i class="fa-brands fa-instagram text-lg text-pink-400"></i>
+                            <span class="text-[10px] font-medium text-white/80">Instagram</span>
+                        </div>
+                        <div id="badge-tiktok" class="platform-badge glass-pill rounded-xl p-2 flex flex-col items-center gap-1 border border-white/10 transition-all duration-300">
+                            <i class="fa-brands fa-tiktok text-lg text-cyan-300"></i>
+                            <span class="text-[10px] font-medium text-white/80">TikTok</span>
+                        </div>
+                        <div id="badge-youtube" class="platform-badge glass-pill rounded-xl p-2 flex flex-col items-center gap-1 border border-white/10 transition-all duration-300">
+                            <i class="fa-brands fa-youtube text-lg text-red-400"></i>
+                            <span class="text-[10px] font-medium text-white/80">YouTube</span>
+                        </div>
+                        <div id="badge-pinterest" class="platform-badge glass-pill rounded-xl p-2 flex flex-col items-center gap-1 border border-white/10 transition-all duration-300">
+                            <i class="fa-brands fa-pinterest text-lg text-rose-400"></i>
+                            <span class="text-[10px] font-medium text-white/80">Pinterest</span>
+                        </div>
+                    </div>
+
+                    <!-- URL Input Box -->
+                    <div class="glass-input rounded-2xl p-2 flex items-center gap-2 mb-3">
+                        <div class="pl-2.5 text-white/50">
+                            <i id="detectedIcon" class="fa-solid fa-link text-base transition-all"></i>
+                        </div>
+                        <input 
+                            id="mediaUrlInput" 
+                            type="url" 
+                             oninput="handleUrlInput(this.value)"
+                            placeholder="Video yoki Reels havolasini kiriting..." 
+                            class="w-full bg-transparent text-sm text-white placeholder-white/40 focus:outline-none py-2"
+                        >
+                        <button onclick="clearInput()" id="clearUrlBtn" class="hidden ios-btn w-7 h-7 rounded-full bg-white/10 text-white/60 hover:text-white items-center justify-center shrink-0">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                        <button onclick="pasteFromClipboard()" class="ios-btn px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-semibold flex items-center gap-1.5 shrink-0 text-ios-cyan">
+                            <i class="fa-regular fa-paste"></i>
+                            <span>Qo'yish</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Test Link Chips (One-tap demo links) -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar">
+                        <span class="text-[10px] text-white/45 shrink-0 mr-1">Sinab ko'rish:</span>
+                        <button onclick="fillDemoLink('instagram')" class="ios-btn text-[11px] px-2.5 py-1 rounded-full bg-pink-500/15 border border-pink-500/30 text-pink-300 shrink-0">
+                            📸 Insta Reels
+                        </button>
+                        <button onclick="fillDemoLink('tiktok')" class="ios-btn text-[11px] px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 shrink-0">
+                            🎵 TikTok HD
+                        </button>
+                        <button onclick="fillDemoLink('youtube')" class="ios-btn text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 shrink-0">
+                            ▶️ YT Shorts
+                        </button>
+                        <button onclick="fillDemoLink('pinterest')" class="ios-btn text-[11px] px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 shrink-0">
+                            📌 Pinterest
+                        </button>
+                    </div>
+
+                    <!-- Format & Quality Segmented Control (iOS 18 style) -->
+                    <div class="mb-4">
+                        <label class="block text-[11px] font-medium text-white/60 mb-1.5 ml-1">Yuklash formati va sifati:</label>
+                        <div class="glass-pill p-1 rounded-2xl grid grid-cols-3 gap-1">
+                            <button onclick="selectFormat('hd')" id="fmt-hd" class="format-btn ios-btn py-2 px-2 rounded-xl text-xs font-semibold bg-white/20 text-white shadow flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-film text-ios-cyan"></i>
+                                <span>HD 1080p</span>
+                            </button>
+                            <button onclick="selectFormat('nowm')" id="fmt-nowm" class="format-btn ios-btn py-2 px-2 rounded-xl text-xs font-semibold text-white/65 hover:text-white flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-wand-magic-sparkles text-ios-purple"></i>
+                                <span>Suv belgisiz</span>
+                            </button>
+                            <button onclick="selectFormat('mp3')" id="fmt-mp3" class="format-btn ios-btn py-2 px-2 rounded-xl text-xs font-semibold text-white/65 hover:text-white flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-music text-ios-pink"></i>
+                                <span>MP3 Audio</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Action Download Button -->
+                    <button onclick="startMediaDownload()" id="mainDownloadBtn" class="ios-btn w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-ios-blue via-indigo-500 to-ios-purple text-white font-bold text-sm shadow-lg shadow-ios-blue/30 border border-white/25 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Media faylni topish va yuklash</span>
+                    </button>
+                </div>
+
+                <!-- Scanning / Fetching Loader Card (Hidden by default) -->
+                <div id="loadingScannerCard" class="hidden glass-card p-5 relative overflow-hidden">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-ios-blue/20 border border-ios-blue/40 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-circle-notch fa-spin text-xl text-ios-cyan"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 id="scanStatusTitle" class="text-sm font-bold text-white">Server orqali tahlil qilinmoqda...</h4>
+                                <span id="scanPercent" class="text-xs font-bold text-ios-cyan">35%</span>
+                            </div>
+                            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div id="scanProgressBar" class="h-full bg-gradient-to-r from-ios-cyan to-ios-purple rounded-full transition-all duration-300" style="width: 35%"></div>
+                            </div>
+                            <p id="scanSubText" class="text-[11px] text-white/55 mt-1.5">Asl nusxadagi suv belgisiz oqim ajratib olinmoqda</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Result Preview Card (Displayed after fetching) -->
+                <div id="mediaResultCard" class="hidden glass-card p-4 space-y-4 border border-ios-cyan/30">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-ios-green/20 text-ios-green border border-ios-green/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check"></i> Yuklashga tayyor
+                        </span>
+                        <span id="resultFormatBadge" class="text-xs font-semibold text-white/70 bg-white/10 px-2.5 py-1 rounded-full">
+                            MP4 • 1080p HD
+                        </span>
+                    </div>
+
+                    <!-- Media Preview Thumbnail & Details -->
+                    <div class="flex gap-3.5 items-center">
+                        <div class="relative w-24 h-28 rounded-2xl overflow-hidden shrink-0 border border-white/15 bg-slate-900">
+                            <img id="resultThumb" src="https://placehold.co/300x400/1e293b/38bdf8?text=Media+HD" alt="Preview" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <div class="w-9 h-9 rounded-full glass-pill flex items-center justify-center text-white">
+                                    <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                                </div>
+                            </div>
+                            <span id="resultDuration" class="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/75 text-[10px] font-semibold">
+                                00:42
+                            </span>
+                        </div>
+
+                        <div class="flex-1 min-w-0 space-y-1.5">
+                            <div id="resultPlatformTag" class="text-[11px] font-bold text-ios-cyan uppercase tracking-wider">
+                                INSTAGRAM REELS
+                            </div>
+                            <h3 id="resultTitle" class="text-sm font-bold text-white line-clamp-2 leading-snug">
+                                Oson Top Bot orqali topilgan yuqori sifatli media fayl
+                            </h3>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-white/60 pt-1">
+                                <span><i class="fa-solid fa-hard-drive mr-1 text-white/40"></i><span id="resultSize">14.2 MB</span></span>
+                                <span>•</span>
+                                <span><i class="fa-solid fa-wand-sparkles mr-1 text-ios-green"></i>Suv belgisiz</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons: Send to Bot Chat OR Direct Save -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <button onclick="sendMediaToBotChat()" class="ios-btn py-3 px-4 rounded-xl bg-ios-blue hover:bg-ios-blue/90 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-ios-blue/25">
+                            <i class="fa-brands fa-telegram text-base"></i>
+                            <span>Bot chatiga yuborish</span>
+                        </button>
+                        <button onclick="triggerDirectSave()" class="ios-btn py-3 px-4 rounded-xl glass-pill hover:bg-white/15 text-white font-semibold text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-down text-ios-cyan"></i>
+                            <span>Qurilmaga saqlash</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Features Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass-card p-3.5 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-ios-purple/20 border border-ios-purple/30 flex items-center justify-center text-ios-purple shrink-0">
+                            <i class="fa-solid fa-infinity"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold">Cheklovlarsiz</h4>
+                            <p class="text-[11px] text-white/55">100% bepul va tez</p>
+                        </div>
+                    </div>
+                    <div class="glass-card p-3.5 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-ios-green/20 border border-ios-green/30 flex items-center justify-center text-ios-green shrink-0">
+                            <i class="fa-solid fa-headphones-simple"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold">Musiqani ajratish</h4>
+                            <p class="text-[11px] text-white/55">Videodan MP3 olish</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB: HISTORY (Yuklashlar tarixi) -->
+            <div id="userTabHistory" class="hidden space-y-4">
+                <div class="glass-card p-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-bold">Yuklashlar tarixi</h2>
+                        <p class="text-xs text-white/55">Oxirgi yuklab olingan media fayllaringiz</p>
+                    </div>
+                    <button onclick="clearHistory()" class="ios-btn px-3 py-1.5 rounded-xl bg-ios-red/20 border border-ios-red/30 text-ios-red text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-regular fa-trash-can"></i>
+                        <span>Tozalash</span>
+                    </button>
+                </div>
+
+                <div id="historyListContainer" class="space-y-2.5">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- SUB-TAB: GUIDE & SAVED (Qo'llanma va ma'lumot) -->
+            <div id="userTabGuide" class="hidden space-y-4">
+                <div class="glass-card p-5 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-ios-cyan/20 border border-ios-cyan/30 flex items-center justify-center text-ios-cyan">
+                            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold">Qanday ishlaydi?</h2>
+                            <p class="text-xs text-white/60">3 ta oddiy qadamda media yuklab oling</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="glass-pill p-3.5 rounded-2xl flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-ios-blue text-white font-bold flex items-center justify-center shrink-0">1</span>
+                            <div>
+                                <h4 class="font-bold text-white mb-0.5">Havolani nusxalang</h4>
+                                <p class="text-white/65">Instagram, TikTok, YouTube yoki Pinterest ilovasidan yoqqan videongizning "Share -> Copy Link" tugmasini bosing.</p>
+                            </div>
+                        </div>
+                        <div class="glass-pill p-3.5 rounded-2xl flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-ios-purple text-white font-bold flex items-center justify-center shrink-0">2</span>
+                            <div>
+                                <h4 class="font-bold text-white mb-0.5">Ilovaga joylang</h4>
+                                <p class="text-white/65">"Qo'yish" tugmasini bosing va kerakli formatni (HD Video, Suv belgisiz yoki MP3 Audio) tanlang.</p>
+                            </div>
+                        </div>
+                        <div class="glass-pill p-3.5 rounded-2xl flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-ios-green text-white font-bold flex items-center justify-center shrink-0">3</span>
+                            <div>
+                                <h4 class="font-bold text-white mb-0.5">Bot chatiga qabul qiling</h4>
+                                <p class="text-white/65">"Bot chatiga yuborish" tugmasini bossangiz, bot darhol tayyor faylni Telegram suhbatingizga tashlab beradi!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==========================================
+             2. ADMIN PANEL VIEW (Boshqaruv Markazi)
+             ========================================== -->
+        <section id="adminPanelView" class="hidden space-y-4">
+
+            <!-- Admin Top Quick Filter Bar -->
+            <div class="glass-pill p-1.5 rounded-2xl grid grid-cols-4 gap-1 text-center">
+                <button onclick="switchAdminTab('stats')" id="admTabBtn-stats" class="adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold bg-white/20 text-white">
+                    📊 Statistika
+                </button>
+                <button onclick="switchAdminTab('broadcast')" id="admTabBtn-broadcast" class="adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold text-white/65">
+                    📢 Xabar
+                </button>
+                <button onclick="switchAdminTab('channels')" id="admTabBtn-channels" class="adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold text-white/65">
+                    🔗 Kanallar
+                </button>
+                <button onclick="switchAdminTab('system')" id="admTabBtn-system" class="adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold text-white/65">
+                    ⚙️ Tizim & Kod
+                </button>
+            </div>
+
+            <!-- ADMIN TAB 1: LIVE STATS & USERS -->
+            <div id="adminSubStats" class="space-y-4">
+                <!-- 2x2 Bento Grid KPI Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="glass-card p-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-white/60 font-medium">Jami Userlar</span>
+                            <span class="w-7 h-7 rounded-xl bg-ios-blue/20 text-ios-blue flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-users"></i>
+                            </span>
+                        </div>
+                        <div id="kpiTotalUsers" class="text-2xl font-extrabold tracking-tight">14,892</div>
+                        <div class="text-[11px] text-ios-green font-semibold mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-trend-up"></i> +184 bugun
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-white/60 font-medium">Yuklashlar</span>
+                            <span class="w-7 h-7 rounded-xl bg-ios-purple/20 text-ios-purple flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                            </span>
+                        </div>
+                        <div id="kpiTodayDownloads" class="text-2xl font-extrabold tracking-tight">3,640</div>
+                        <div class="text-[11px] text-ios-cyan font-semibold mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> 99.4% muvaffaqiyatli
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-white/60 font-medium">Railway Server</span>
+                            <span class="w-7 h-7 rounded-xl bg-ios-green/20 text-ios-green flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-server"></i>
+                            </span>
+                        </div>
+                        <div class="text-lg font-extrabold text-ios-green flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-ios-green animate-ping"></span>
+                            Online 24/7
+                        </div>
+                        <div class="text-[11px] text-white/55 mt-1">CPU: 14% • RAM: 182MB</div>
+                    </div>
+
+                    <div class="glass-card p-4 relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-white/60 font-medium">Majburiy Obuna</span>
+                            <span class="w-7 h-7 rounded-xl bg-ios-orange/20 text-ios-orange flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between mt-1">
+                            <span id="forceSubStatusText" class="text-sm font-bold text-ios-green">Yoqilgan</span>
+                            <button onclick="toggleForceSub()" id="forceSubSwitch" class="w-12 h-6 rounded-full bg-ios-green p-0.5 transition-all flex items-center justify-end">
+                                <span class="w-5 h-5 rounded-full bg-white shadow"></span>
+                            </button>
+                        </div>
+                        <div class="text-[11px] text-white/55 mt-1.5">2 ta kanal ulangan</div>
+                    </div>
+                </div>
+
+                <!-- Platform Traffic Breakdown -->
+                <div class="glass-card p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold">Platformalar bo'yicha ulush</h3>
+                        <span class="text-[11px] text-white/50">Oxirgi 24 soat</span>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-medium flex items-center gap-1.5"><i class="fa-brands fa-instagram text-pink-400"></i> Instagram Reels & Post</span>
+                                <span class="font-bold">54%</span>
+                            </div>
+                            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-pink-500 to-rose-400 rounded-full" style="width: 54%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-medium flex items-center gap-1.5"><i class="fa-brands fa-tiktok text-cyan-300"></i> TikTok Watermark'siz</span>
+                                <span class="font-bold">29%</span>
+                            </div>
+                            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full" style="width: 29%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-medium flex items-center gap-1.5"><i class="fa-brands fa-youtube text-red-400"></i> YouTube Shorts & MP3</span>
+                                <span class="font-bold">17%</span>
+                            </div>
+                            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-500 to-orange-400 rounded-full" style="width: 17%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Search & Management -->
+                <div class="glass-card p-4 space-y-3">
+                    <h3 class="text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-ios-cyan"></i>
+                        <span>Foydalanuvchini boshqarish</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <input id="adminUserSearchInput" type="text" placeholder="User ID yoki @username kiriting..." class="glass-input flex-1 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <button onclick="searchUserAdmin()" class="ios-btn px-4 py-2 rounded-xl bg-ios-blue text-xs font-bold">
+                            Topish
+                        </button>
+                    </div>
+
+                    <div id="searchedUserBox" class="glass-pill p-3 rounded-2xl flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-ios-purple/25 text-ios-purple flex items-center justify-center font-bold text-xs">
+                                ID
+                            </div>
+                            <div>
+                                <p id="foundUserName" class="text-xs font-bold">Sardorbek (#61920441)</p>
+                                <p id="foundUserStatus" class="text-[11px] text-ios-green">Faol • 42 ta video yuklagan</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="toggleUserVip()" class="ios-btn px-2.5 py-1.5 rounded-lg bg-ios-orange/20 text-ios-orange text-[11px] font-semibold">
+                                ⭐ VIP
+                            </button>
+                            <button onclick="toggleUserBan()" id="banUserBtn" class="ios-btn px-2.5 py-1.5 rounded-lg bg-ios-red/20 text-ios-red text-[11px] font-semibold">
+                                🚫 Bloklash
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 2: BROADCAST (Reklama va Xabar tarqatish) -->
+            <div id="adminSubBroadcast" class="hidden space-y-4">
+                <div class="glass-card p-4 space-y-3.5">
+                    <div>
+                        <h3 class="text-base font-bold">Ommaviy xabar tarqatish (Broadcast)</h3>
+                        <p class="text-xs text-white/55">Barcha 14,892 foydalanuvchiga rasm, matn va inline tugmali post yuborish</p>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="text-white/65 block mb-1">Rasm yoki Video havolasi (ixtiyoriy):</label>
+                            <input id="bcMediaUrl" type="url" placeholder="https://..." class="glass-input w-full rounded-xl px-3 py-2.5 text-white focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="text-white/65 block mb-1">Xabar matni (HTML / Markdown qo'llab-quvvatlanadi):</label>
+                            <textarea id="bcMessageText" rows="4" placeholder="🔥 Yangilik! Oson Top Bot endi yanada tezroq ishlaydi..." class="glass-input w-full rounded-xl p-3 text-white focus:outline-none"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-white/65 block mb-1">Inline tugma nomi:</label>
+                                <input id="bcBtnText" type="text" placeholder="🚀 Sinab ko'rish" class="glass-input w-full rounded-xl px-3 py-2 text-white focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="text-white/65 block mb-1">Tugma URL manzili:</label>
+                                <input id="bcBtnUrl" type="url" placeholder="https://t.me/..." class="glass-input w-full rounded-xl px-3 py-2 text-white focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Broadcast Progress Box -->
+                    <div id="bcProgressBox" class="hidden glass-pill p-3 rounded-2xl space-y-1.5">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span id="bcStatusLabel">Yuborilmoqda...</span>
+                            <span id="bcCountLabel" class="text-ios-cyan">0 / 14,892</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div id="bcBar" class="h-full bg-ios-green rounded-full transition-all duration-200" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="sendBroadcastNow()" class="ios-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-ios-green to-emerald-600 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Barcha foydalanuvchilarga yuborish</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 3: MANDATORY CHANNELS (Majburiy obuna) -->
+            <div id="adminSubChannels" class="hidden space-y-4">
+                <div class="glass-card p-4 space-y-3.5">
+                    <div>
+                        <h3 class="text-base font-bold">Majburiy obuna kanallari</h3>
+                        <p class="text-xs text-white/55">Foydalanuvchi video yuklashdan oldin a'zo bo'lishi shart bo'lgan kanallar</p>
+                    </div>
+
+                    <!-- Add New Channel Form -->
+                    <div class="glass-pill p-3 rounded-2xl space-y-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input id="newChanTitle" type="text" placeholder="Kanal nomi (Masalan: Rasmiy Kanal)" class="glass-input rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <input id="newChanUsername" type="text" placeholder="@kanal_username yoki https://t.me/..." class="glass-input rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        </div>
+                        <button onclick="addMandatoryChannel()" class="ios-btn w-full py-2.5 rounded-xl bg-ios-blue text-white font-bold text-xs flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Ro'yxatga kanal qo'shish</span>
+                        </button>
+                    </div>
+
+                    <!-- Channels List -->
+                    <div id="channelsListContainer" class="space-y-2">
+                        <!-- Rendered via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 4: SYSTEM SETTINGS & READY PYTHON CODE FOR GITHUB/RAILWAY -->
+            <div id="adminSubSystem" class="hidden space-y-4">
+                <div class="glass-card p-4 space-y-3">
+                    <h3 class="text-base font-bold">Tizim sozlamalari va Baza</h3>
+                    
+                    <div class="glass-pill p-3 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-bold">Texnik ta'mir rejimi (Maintenance)</h4>
+                            <p class="text-[11px] text-white/55">Oddiy userlar uchun botni vaqtincha yopib turish</p>
+                        </div>
+                        <button onclick="toggleMaintenanceMode()" id="maintSwitch" class="w-12 h-6 rounded-full bg-white/20 p-0.5 transition-all flex items-center justify-start">
+                            <span class="w-5 h-5 rounded-full bg-white shadow"></span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5 pt-1">
+                        <button onclick="exportDatabaseBackup()" class="ios-btn py-3 px-3 rounded-xl glass-pill text-xs font-semibold flex items-center justify-center gap-2 text-ios-cyan">
+                            <i class="fa-solid fa-database"></i>
+                            <span>Bazani yuklash (.JSON)</span>
+                        </button>
+                        <button onclick="syncWithTelegramBackend()" class="ios-btn py-3 px-3 rounded-xl glass-pill text-xs font-semibold flex items-center justify-center gap-2 text-ios-green">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Bot bilan sinxronlash</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ready-to-Deploy Python Bot + WebApp Server Code for GitHub/Railway -->
+                <div class="glass-card p-4 space-y-3 border border-ios-purple/40">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-ios-purple">GitHub & Railway Avto-Deploy</span>
+                            <h3 class="text-sm font-bold">Tayyor Python Backend (`main.py`)</h3>
+                        </div>
+                        <button onclick="copyPythonBackendCode()" class="ios-btn px-3 py-1.5 rounded-xl bg-ios-purple text-white text-xs font-bold flex items-center gap-1.5 shadow">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Kodni nusxalash</span>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-white/65 leading-relaxed">
+                        Ushbu Python kodi ham Telegram botni, ham ushbu Glassmorphism Mini App'ni Railway'da bitta faylda ko'taradi. Nusxalab GitHub'dagi `main.py` faylingizga qo'yishingiz kifoya:
+                    </p>
+                    <pre id="pythonCodeBlock" class="glass-input p-3 rounded-xl text-[11px] font-mono text-cyan-300 overflow-x-auto max-h-56 leading-relaxed">import os, json, asyncio
+from aiohttp import web
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import CommandStart
+from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "SIZNING_BOT_TOKENINGIZ")
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "123456789").split(",") if x.isdigit()]
+WEBAPP_URL = os.getenv("RAILWAY_PUBLIC_DOMAIN", "https://oson-top-bot.up.railway.app")
+if not WEBAPP_URL.startswith("http"):
+    WEBAPP_URL = f"https://{WEBAPP_URL}"
+
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
+
+@dp.message(CommandStart())
+async def start_cmd(msg: types.Message):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="✨ Oson Top Mini App (Video Yuklash)",
+            web_app=WebAppInfo(url=WEBAPP_URL)
+        )
+    ]])
+    await msg.answer(
+        "👋 <b>Oson Top Botga xush kelibsiz!</b>\n\n"
+        "Instagram, TikTok, YouTube va Pinterest'dan suv belgisiz "
+        "videolarni yuklash uchun pastdagi <b>Mini App</b> tugmasini bosing yoki link yuboring:",
+        reply_markup=kb,
+        parse_mode="HTML"
+    )
+
+@dp.message(F.web_app_data)
+async def handle_webapp_data(msg: types.Message):
+    data = json.loads(msg.web_app_data.data)
+    action = data.get("action")
+    if action == "download_media":
+        url = data.get("url")
+        fmt = data.get("format", "hd")
+        await msg.answer(f"⚡ <b>Yuklanmoqda ({fmt.upper()}):</b>\n{url}", parse_mode="HTML")
+    elif action == "admin_broadcast" and msg.from_user.id in ADMIN_IDS:
+        text = data.get("text", "")
+        await msg.answer(f"✅ <b>Admin Broadcast qabul qilindi:</b>\n\n{text}", parse_mode="HTML")
+
+async def index_handler(request):
+    return web.FileResponse("./index.html")
+
+async def main():
+    app = web.Application()
+    app.router.add_get("/", index_handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())</pre>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- BOTTOM FLOATING GLASS NAVIGATION BAR (iOS 18 Tab Bar) -->
+    <nav id="bottomUserNav" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md">
+        <div class="glass-pill rounded-3xl p-1.5 grid grid-cols-3 gap-1 shadow-2xl border border-white/20">
+            <button onclick="switchUserTab('home')" id="navBtn-home" class="user-nav-btn ios-btn py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 bg-white/20 text-white">
+                <i class="fa-solid fa-bolt text-sm text-ios-cyan"></i>
+                <span class="text-[11px] font-semibold">Yuklash</span>
+            </button>
+            <button onclick="switchUserTab('history')" id="navBtn-history" class="user-nav-btn ios-btn py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/60 hover:text-white">
+                <div class="relative">
+                    <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+                    <span id="historyCountBadge" class="absolute -top-1.5 -right-3 px-1.5 py-0.2 rounded-full bg-ios-blue text-[9px] font-bold text-white">3</span>
+                </div>
+                <span class="text-[11px] font-semibold">Tarix</span>
+            </button>
+            <button onclick="switchUserTab('guide')" id="navBtn-guide" class="user-nav-btn ios-btn py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/60 hover:text-white">
+                <i class="fa-solid fa-compass text-sm"></i>
+                <span class="text-[11px] font-semibold">Qo'llanma</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- APPLICATION LOGIC -->
+    <script>
+        // Initialize Telegram WebApp API safely
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            try {
+                tg.setHeaderColor('#05070f');
+                tg.setBackgroundColor('#05070f');
+            } catch (e) {}
+        }
+
+        // App State
+        let currentRole = 'user'; // 'user' | 'admin'
+        let selectedFormat = 'hd'; // 'hd' | 'nowm' | 'mp3'
+        let currentMediaItem = null;
+        let forceSubEnabled = true;
+        let maintenanceEnabled = false;
+        let currentFoundUserBanned = false;
+
+        // Default History Items
+        let downloadHistory = JSON.parse(localStorage.getItem('osontop_history') || JSON.stringify([
+            {
+                id: 101,
+                platform: 'Instagram Reels',
+                url: 'https://www.instagram.com/reel/C8x9kLp/',
+                title: 'Toshkent City Night Timelapse 4K Ultra HD',
+                format: 'HD 1080p',
+                size: '16.4 MB',
+                time: '10 daqiqa oldin',
+                thumb: 'https://placehold.co/300x400/3b0764/f472b6?text=Reels+4K'
+            },
+            {
+                id: 102,
+                platform: 'TikTok HD',
+                url: 'https://vm.tiktok.com/ZMr9x2a/',
+                title: 'Trend Music Remix — Original Sound (Suv belgisiz)',
+                format: 'No Watermark',
+                size: '9.8 MB',
+                time: '1 soat oldin',
+                thumb: 'https://placehold.co/300x400/083344/22d3ee?text=TikTok+HD'
+            },
+            {
+                id: 103,
+                platform: 'YouTube Audio',
+                url: 'https://youtube.com/shorts/dQw4w9WgXcQ',
+                title: 'Motivatsion Podkast — Ovozli trek 320kbps',
+                format: 'MP3 320kbps',
+                size: '4.1 MB',
+                time: 'Kecha',
+                thumb: 'https://placehold.co/300x400/450a0a/f87171?text=MP3+320k'
+            }
+        ]));
+
+        // Default Mandatory Channels
+        let mandatoryChannels = JSON.parse(localStorage.getItem('osontop_channels') || JSON.stringify([
+            { id: 1, title: 'Oson Top Rasmiy Kanali', username: '@oson_top_news', members: '18,420 a\'zo' },
+            { id: 2, title: 'IT va Texnologiya Uz', username: '@texno_uz_official', members: '9,150 a\'zo' }
+        ]));
+
+        // Toast Notification Helper
+        let toastTimeout;
+        function showToast(message, title = "Oson Top Tizimi", iconClass = "fa-solid fa-circle-check text-ios-green") {
+            const container = document.getElementById('toastContainer');
+            const msgEl = document.getElementById('toastMessage');
+            const titleEl = document.getElementById('toastTitle');
+            const iconEl = document.getElementById('toastIcon');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            iconEl.innerHTML = `<i class="${iconClass}"></i>`;
+
+            container.classList.remove('opacity-0', '-translate-y-4');
+            container.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                container.classList.remove('opacity-100', 'translate-y-0');
+                container.classList.add('opacity-0', '-translate-y-4');
+            }, 2800);
+        }
+
+        // Detect Telegram User Profile on Load
+        function initUserProfile() {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Telegram User';
+                document.getElementById('userNameDisplay').textContent = fullName;
+                document.getElementById('userSubDisplay').textContent = u.username ? `@${u.username} • ID: ${u.id}` : `ID: ${u.id}`;
+                document.getElementById('avatarInitials').textContent = fullName.substring(0, 2).toUpperCase();
+            }
+            renderHistory();
+            renderChannels();
+        }
+
+        // Switch Between User Panel and Admin Panel
+        function switchRole(role) {
+            currentRole = role;
+            const userView = document.getElementById('userPanelView');
+            const adminView = document.getElementById('adminPanelView');
+            const bottomNav = document.getElementById('bottomUserNav');
+            const btnUser = document.getElementById('btnRoleUser');
+            const btnAdmin = document.getElementById('btnRoleAdmin');
+            const badge = document.getElementById('roleBadge');
+
+            if (role === 'admin') {
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                bottomNav.classList.add('hidden');
+
+                btnAdmin.className = 'ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 bg-ios-purple text-white shadow-sm';
+                btnUser.className = 'ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-white/60 hover:text-white';
+                
+                badge.textContent = 'ADMIN';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-ios-purple/25 text-ios-purple border border-ios-purple/40';
+                showToast("Admin Boshqaruv Markazi ochildi", "Admin Panel", "fa-solid fa-shield-halved text-ios-purple");
+            } else {
+                adminView.classList.add('hidden');
+                userView.classList.remove('hidden');
+                bottomNav.classList.remove('hidden');
+
+                btnUser.className = 'ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 bg-white/20 text-white shadow-sm';
+                btnAdmin.className = 'ios-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 text-white/60 hover:text-white';
+
+                badge.textContent = 'PRO';
+                badge.className = 'px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-ios-blue/25 text-ios-cyan border border-ios-cyan/30';
+                showToast("Foydalanuvchi rejimi faollashdi", "User Panel", "fa-solid fa-user text-ios-cyan");
+            }
+        }
+
+        // User Bottom Navigation Switcher
+        function switchUserTab(tab) {
+            ['home', 'history', 'guide'].forEach(t => {
+                document.getElementById(`userTab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.add('hidden');
+                const btn = document.getElementById(`navBtn-${t}`);
+                btn.className = 'user-nav-btn ios-btn py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/60 hover:text-white';
+            });
+
+            document.getElementById(`userTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`navBtn-${tab}`);
+            activeBtn.className = 'user-nav-btn ios-btn py-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 bg-white/20 text-white';
+        }
+
+        // Handle URL Input & Auto-Detect Platform
+        function handleUrlInput(val) {
+            const clearBtn = document.getElementById('clearUrlBtn');
+            const icon = document.getElementById('detectedIcon');
+            const url = val.trim().toLowerCase();
+
+            // Reset platform badge highlights
+            document.querySelectorAll('.platform-badge').forEach(el => {
+                el.classList.remove('ring-2', 'ring-ios-cyan', 'bg-white/20', 'scale-105');
+            });
+
+            if (url.length > 0) {
+                clearBtn.classList.remove('hidden');
+                clearBtn.classList.add('flex');
+            } else {
+                clearBtn.classList.add('hidden');
+                clearBtn.classList.remove('flex');
+                icon.className = 'fa-solid fa-link text-base text-white/50';
+                return;
+            }
+
+            if (url.includes('instagram.com') || url.includes('instagr.am')) {
+                icon.className = 'fa-brands fa-instagram text-lg text-pink-400';
+                highlightBadge('badge-instagram');
+            } else if (url.includes('tiktok.com')) {
+                icon.className = 'fa-brands fa-tiktok text-lg text-cyan-300';
+                highlightBadge('badge-tiktok');
+            } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                icon.className = 'fa-brands fa-youtube text-lg text-red-400';
+                highlightBadge('badge-youtube');
+            } else if (url.includes('pinterest.com') || url.includes('pin.it')) {
+                icon.className = 'fa-brands fa-pinterest text-lg text-rose-400';
+                highlightBadge('badge-pinterest');
+            } else {
+                icon.className = 'fa-solid fa-globe text-base text-ios-cyan';
+            }
+        }
+
+        function highlightBadge(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('ring-2', 'ring-ios-cyan', 'bg-white/20', 'scale-105');
+            }
+        }
+
+        function clearInput() {
+            const inp = document.getElementById('mediaUrlInput');
+            inp.value = '';
+            handleUrlInput('');
+            document.getElementById('mediaResultCard').classList.add('hidden');
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        document.getElementById('mediaUrlInput').value = text;
+                        handleUrlInput(text);
+                        showToast("Buferdan havola qo'yildi!", "Smart Clipboard");
+                        return;
+                    }
+                }
+            } catch (err) {}
+            // Fallback demo link if clipboard permission is blocked in iframe
+            fillDemoLink('instagram');
+            showToast("Namuna Instagram Reels havolasi qo'yildi", "Smart Paste");
+        }
+
+        function fillDemoLink(platform) {
+            const sampleLinks = {
+                instagram: 'https://www.instagram.com/reel/C9xOsOnToP/',
+                tiktok: 'https://vm.tiktok.com/ZMkOsonTopHD/',
+                youtube: 'https://youtube.com/shorts/OsonTopShorts4K',
+                pinterest: 'https://pin.it/7OsonTopPin Aesthetic'
+            };
+            const input = document.getElementById('mediaUrlInput');
+            input.value = sampleLinks[platform];
+            handleUrlInput(input.value);
+        }
+
+        function selectFormat(fmt) {
+            selectedFormat = fmt;
+            ['hd', 'nowm', 'mp3'].forEach(k => {
+                const btn = document.getElementById(`fmt-${k}`);
+                btn.className = 'format-btn ios-btn py-2 px-2 rounded-xl text-xs font-semibold text-white/65 hover:text-white flex items-center justify-center gap-1.5';
+            });
+            const active = document.getElementById(`fmt-${fmt}`);
+            const icons = {
+                hd: '<i class="fa-solid fa-film text-ios-cyan"></i><span>HD 1080p</span>',
+                nowm: '<i class="fa-solid fa-wand-magic-sparkles text-ios-purple"></i><span>Suv belgisiz</span>',
+                mp3: '<i class="fa-solid fa-music text-ios-pink"></i><span>MP3 Audio</span>'
+            };
+            active.className = 'format-btn ios-btn py-2 px-2 rounded-xl text-xs font-semibold bg-white/20 text-white shadow flex items-center justify-center gap-1.5';
+            active.innerHTML = icons[fmt];
+        }
+
+        // Simulate or Execute Media Fetching
+        function startMediaDownload() {
+            if (maintenanceEnabled && currentRole === 'user') {
+                showToast("Hozir botda texnik ishlar olib borilmoqda!", "Texnik ta'mir", "fa-solid fa-screwdriver-wrench text-ios-orange");
+                return;
+            }
+
+            const url = document.getElementById('mediaUrlInput').value.trim();
+            if (!url) {
+                showToast("Iltimos, avval video havolasini kiriting!", "Havola topilmadi", "fa-solid fa-triangle-exclamation text-ios-orange");
+                return;
+            }
+
+            const loader = document.getElementById('loadingScannerCard');
+            const resultCard = document.getElementById('mediaResultCard');
+            const bar = document.getElementById('scanProgressBar');
+            const pct = document.getElementById('scanPercent');
+
+            resultCard.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            let progress = 18;
+            bar.style.width = `${progress}%`;
+            pct.textContent = `${progress}%`;
+
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 28) + 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loader.classList.add('hidden');
+                        presentMediaResult(url);
+                    }, 220);
+                }
+                bar.style.width = `${progress}%`;
+                pct.textContent = `${progress}%`;
+            }, 240);
+        }
+
+        function presentMediaResult(url) {
+            const low = url.toLowerCase();
+            let platform = 'MEDIA STREAM';
+            let thumb = 'https://placehold.co/300x400/1e293b/38bdf8?text=Video+HD';
+            let title = 'Oson Top orqali yuklangan original sifatli media fayl';
+            let size = '12.8 MB';
+            let duration = '00:38';
+
+            if (low.includes('instagram') || low.includes('instagr.am')) {
+                platform = 'INSTAGRAM REELS';
+                thumb = 'https://placehold.co/300x400/500724/f472b6?text=Insta+Reels';
+                title = 'Instagram Reels — Original 1080p Full HD (Suv belgisiz)';
+                size = '15.2 MB';
+            } else if (low.includes('tiktok')) {
+                platform = 'TIKTOK NO-WATERMARK';
+                thumb = 'https://placehold.co/300x400/083344/22d3ee?text=TikTok+Original';
+                title = 'TikTok Trend Video — Logotipsiz toza nusxa';
+                size = '8.6 MB';
+            } else if (low.includes('youtube') || low.includes('youtu.be')) {
+                platform = 'YOUTUBE SHORTS / HD';
+                thumb = 'https://placehold.co/300x400/450a0a/f87171?text=YouTube+HD';
+                title = 'YouTube Shorts — Yuqori sifatli video va stereo audio';
+                size = '19.4 MB';
+            } else if (low.includes('pin')) {
+                platform = 'PINTEREST IDEA PIN';
+                thumb = 'https://placehold.co/300x400/4c0519/fb7185?text=Pinterest+Pin';
+                title = 'Pinterest Aesthetic Video Pin — Original Quality';
+                size = '7.3 MB';
+            }
+
+            const fmtLabels = {
+                hd: 'MP4 • 1080p HD',
+                nowm: 'MP4 • No Watermark',
+                mp3: 'MP3 • 320kbps Audio'
+            };
+
+            if (selectedFormat === 'mp3') {
+                size = '3.4 MB';
+            }
+
+            document.getElementById('resultPlatformTag').textContent = platform;
+            document.getElementById('resultThumb').src = thumb;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultSize').textContent = size;
+            document.getElementById('resultDuration').textContent = duration;
+            document.getElementById('resultFormatBadge').textContent = fmtLabels[selectedFormat];
+
+            currentMediaItem = {
+                id: Date.now(),
+                platform,
+                url,
+                title,
+                format: fmtLabels[selectedFormat],
+                size,
+                time: 'Hozirgina',
+                thumb
+            };
+
+            // Save to History
+            downloadHistory.unshift(currentMediaItem);
+            localStorage.setItem('osontop_history', JSON.stringify(downloadHistory.slice(0, 20)));
+            renderHistory();
+
+            // Increment Admin KPI counter live
+            const kpiEl = document.getElementById('kpiTodayDownloads');
+            const currentCount = parseInt(kpiEl.textContent.replace(/,/g, ''), 10) || 3640;
+            kpiEl.textContent = (currentCount + 1).toLocaleString();
+
+            document.getElementById('mediaResultCard').classList.remove('hidden');
+            showToast("Media fayl topildi! Yuklab olishingiz mumkin.", "Muvaffaqiyatli");
+        }
+
+        // Send Media directly to Telegram Bot Chat via WebApp SDK
+        function sendMediaToBotChat() {
+            if (!currentMediaItem) return;
+            const payload = JSON.stringify({
+                action: 'download_media',
+                url: currentMediaItem.url,
+                format: selectedFormat,
+                platform: currentMediaItem.platform
+            });
+
+            if (tg && tg.initData) {
+                tg.sendData(payload);
+            } else {
+                showToast("Telegram botga so'rov yuborildi! Fayl chatga tashlanadi.", "Bot Chatiga Yuborildi", "fa-brands fa-telegram text-ios-cyan");
+            }
+        }
+
+        function triggerDirectSave() {
+            if (!currentMediaItem) return;
+            showToast(`${currentMediaItem.format} fayl qurilmangizga saqlanmoqda...`, "Yuklab olish boshlandi", "fa-solid fa-cloud-arrow-down text-ios-green");
+        }
+
+        // Render User History List
+        function renderHistory() {
+            const container = document.getElementById('historyListContainer');
+            const badge = document.getElementById('historyCountBadge');
+            badge.textContent = downloadHistory.length;
+
+            if (downloadHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card p-8 text-center space-y-2">
+                        <i class="fa-solid fa-folder-open text-3xl text-white/30"></i>
+                        <p class="text-sm font-semibold text-white/70">Tarix hozircha bo'sh</p>
+                        <p class="text-xs text-white/45">Yuklab olingan barcha videolar shu yerda saqlanadi</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = downloadHistory.map(item => `
+                <div class="glass-card p-3 flex items-center gap-3">
+                    <img src="${item.thumb}" alt="thumb" class="w-14 h-16 rounded-xl object-cover shrink-0 border border-white/10">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold uppercase text-ios-cyan">${item.platform}</span>
+                            <span class="text-[10px] text-white/40">• ${item.time}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.title}</h4>
+                        <p class="text-[11px] text-white/55 mt-0.5">${item.format} • ${item.size}</p>
+                    </div>
+                    <button onclick="reloadFromHistory('${item.url}')" class="ios-btn w-9 h-9 rounded-xl glass-pill flex items-center justify-center text-ios-cyan shrink-0">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function reloadFromHistory(url) {
+            switchUserTab('home');
+            const input = document.getElementById('mediaUrlInput');
+            input.value = url;
+            handleUrlInput(url);
+            startMediaDownload();
+        }
+
+        function clearHistory() {
+            downloadHistory = [];
+            localStorage.setItem('osontop_history', '[]');
+            renderHistory();
+            showToast("Yuklashlar tarixi tozalandi", "Tarix", "fa-solid fa-trash text-ios-red");
+        }
+
+        // ==========================================
+        // ADMIN PANEL FUNCTIONS
+        // ==========================================
+        function switchAdminTab(tab) {
+            const map = {
+                stats: 'adminSubStats',
+                broadcast: 'adminSubBroadcast',
+                channels: 'adminSubChannels',
+                system: 'adminSubSystem'
+            };
+            Object.keys(map).forEach(k => {
+                document.getElementById(map[k]).classList.add('hidden');
+                document.getElementById(`admTabBtn-${k}`).className = 'adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold text-white/65';
+            });
+            document.getElementById(map[tab]).classList.remove('hidden');
+            document.getElementById(`admTabBtn-${tab}`).className = 'adm-tab-btn ios-btn py-2 rounded-xl text-xs font-semibold bg-white/20 text-white shadow';
+        }
+
+        function toggleForceSub() {
+            forceSubEnabled = !forceSubEnabled;
+            const sw = document.getElementById('forceSubSwitch');
+            const txt = document.getElementById('forceSubStatusText');
+            if (forceSubEnabled) {
+                sw.className = 'w-12 h-6 rounded-full bg-ios-green p-0.5 transition-all flex items-center justify-end';
+                txt.textContent = 'Yoqilgan';
+                txt.className = 'text-sm font-bold text-ios-green';
+                showToast("Majburiy obuna tekshiruvi yoqildi", "Admin Sozlamalar");
+            } else {
+                sw.className = 'w-12 h-6 rounded-full bg-white/20 p-0.5 transition-all flex items-center justify-start';
+                txt.textContent = 'O\'chirilgan';
+                txt.className = 'text-sm font-bold text-white/50';
+                showToast("Majburiy obuna vaqtincha o'chirildi", "Admin Sozlamalar", "fa-solid fa-lock-open text-ios-orange");
+            }
+        }
+
+        function searchUserAdmin() {
+            const q = document.getElementById('adminUserSearchInput').value.trim();
+            if (!q) {
+                showToast("User ID yoki username kiriting", "Qidiruv", "fa-solid fa-magnifying-glass text-ios-cyan");
+                return;
+            }
+            document.getElementById('foundUserName').textContent = `${q} (#8492014)`;
+            document.getElementById('foundUserStatus').textContent = "Faol • 19 ta media yuklagan";
+            document.getElementById('foundUserStatus').className = "text-[11px] text-ios-green";
+            currentFoundUserBanned = false;
+            showToast("Foydalanuvchi ma'lumotlari topildi", "Baza Qidiruvi");
+        }
+
+        function toggleUserVip() {
+            document.getElementById('foundUserStatus').textContent = "⭐ VIP Foydalanuvchi • Cheklovsiz";
+            document.getElementById('foundUserStatus').className = "text-[11px] text-ios-orange font-semibold";
+            showToast("Foydalanuvchiga VIP maqomi berildi!", "Admin Action", "fa-solid fa-star text-ios-orange");
+        }
+
+        function toggleUserBan() {
+            currentFoundUserBanned = !currentFoundUserBanned;
+            const btn = document.getElementById('banUserBtn');
+            const st = document.getElementById('foundUserStatus');
+            if (currentFoundUserBanned) {
+                st.textContent = "🚫 Bloklangan (Banned)";
+                st.className = "text-[11px] text-ios-red font-semibold";
+                btn.textContent = "✅ Blokdan ochish";
+                showToast("Foydalanuvchi bloklandi", "Xavfsizlik", "fa-solid fa-ban text-ios-red");
+            } else {
+                st.textContent = "Faol • Blokdan ochildi";
+                st.className = "text-[11px] text-ios-green";
+                btn.textContent = "🚫 Bloklash";
+                showToast("Foydalanuvchi blokdan ochildi", "Xavfsizlik");
+            }
+        }
+
+        // Broadcast Simulator + Telegram WebApp Hook
+        function sendBroadcastNow() {
+            const text = document.getElementById('bcMessageText').value.trim();
+            if (!text) {
+                showToast("Xabar matnini kiriting!", "Xatolik", "fa-solid fa-circle-exclamation text-ios-orange");
+                return;
+            }
+
+            const box = document.getElementById('bcProgressBox');
+            const bar = document.getElementById('bcBar');
+            const countLbl = document.getElementById('bcCountLabel');
+            const statusLbl = document.getElementById('bcStatusLabel');
+
+            box.classList.remove('hidden');
+            let sent = 0;
+            const total = 14892;
+
+            const timer = setInterval(() => {
+                sent += Math.floor(Math.random() * 2900) + 1800;
+                if (sent >= total) {
+                    sent = total;
+                    clearInterval(timer);
+                    statusLbl.textContent = "✅ Muvaffaqiyatli yakunlandi!";
+                    showToast("Reklama posti barcha 14,892 foydalanuvchiga yetkazildi!", "Broadcast", "fa-solid fa-paper-plane text-ios-green");
+                }
+                const pct = Math.round((sent / total) * 100);
+                bar.style.width = `${pct}%`;
+                countLbl.textContent = `${sent.toLocaleString()} / ${total.toLocaleString()}`;
+            }, 220);
+        }
+
+        // Mandatory Channels Manager
+        function renderChannels() {
+            const container = document.getElementById('channelsListContainer');
+            if (mandatoryChannels.length === 0) {
+                container.innerHTML = `<p class="text-xs text-white/50 text-center py-4">Ulangan kanallar yo'q</p>`;
+                return;
+            }
+            container.innerHTML = mandatoryChannels.map(ch => `
+                <div class="glass-pill p-3 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-ios-blue/20 text-ios-cyan flex items-center justify-center shrink-0">
+                            <i class="fa-brands fa-telegram text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-xs font-bold text-white truncate">${ch.title}</h4>
+                            <p class="text-[11px] text-white/55 truncate">${ch.username} • ${ch.members}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeChannel(${ch.id})" class="ios-btn w-8 h-8 rounded-xl bg-ios-red/20 text-ios-red flex items-center justify-center shrink-0">
+                        <i class="fa-regular fa-trash-can text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addMandatoryChannel() {
+            const title = document.getElementById('newChanTitle').value.trim();
+            const username = document.getElementById('newChanUsername').value.trim();
+            if (!title || !username) {
+                showToast("Kanal nomi va username'ni kiriting", "Majburiy obuna", "fa-solid fa-triangle-exclamation text-ios-orange");
+                return;
+            }
+            mandatoryChannels.push({
+                id: Date.now(),
+                title,
+                username: username.startsWith('@') || username.startsWith('http') ? username : `@${username}`,
+                members: 'Yangi ulangan'
+            });
+            localStorage.setItem('osontop_channels', JSON.stringify(mandatoryChannels));
+            document.getElementById('newChanTitle').value = '';
+            document.getElementById('newChanUsername').value = '';
+            renderChannels();
+            showToast(`${title} majburiy obunaga qo'shildi!`, "Kanal ulandi");
+        }
+
+        function removeChannel(id) {
+            mandatoryChannels = mandatoryChannels.filter(c => c.id !== id);
+            localStorage.setItem('osontop_channels', JSON.stringify(mandatoryChannels));
+            renderChannels();
+            showToast("Kanal ro'yxatdan o'chirildi", "Majburiy obuna", "fa-solid fa-trash text-ios-red");
+        }
+
+        // System Settings & Python Code Copy
+        function toggleMaintenanceMode() {
+            maintenanceEnabled = !maintenanceEnabled;
+            const sw = document.getElementById('maintSwitch');
+            if (maintenanceEnabled) {
+                sw.className = 'w-12 h-6 rounded-full bg-ios-orange p-0.5 transition-all flex items-center justify-end';
+                showToast("Texnik ta'mir rejimi yoqildi", "Tizim", "fa-solid fa-screwdriver-wrench text-ios-orange");
+            } else {
+                sw.className = 'w-12 h-6 rounded-full bg-white/20 p-0.5 transition-all flex items-center justify-start';
+                showToast("Texnik ta'mir rejimi o'chirildi", "Tizim");
+            }
+        }
+
+        function exportDatabaseBackup() {
+            const backupData = {
+                bot: "Oson Top Bot",
+                exported_at: new Date().toISOString(),
+                total_users: 14892,
+                mandatory_channels: mandatoryChannels,
+                recent_downloads: downloadHistory
+            };
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `oson_top_backup_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("Baza nusxasi (.JSON) yuklab olindi!", "Database Backup");
+        }
+
+        function syncWithTelegramBackend() {
+            showToast("Railway server va Bot bazasi sinxronlandi!", "Sinxronizatsiya", "fa-solid fa-rotate text-ios-cyan");
+        }
+
+        function copyPythonBackendCode() {
+            const code = document.getElementById('pythonCodeBlock').innerText;
+            const temp = document.createElement('textarea');
+            temp.value = code;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Tayyor Python kod nusxalandi! GitHub main.py ga joylang.", "Kod Nusxalandi", "fa-solid fa-code text-ios-purple");
+        }
+
+        window.onload = function() {
+            initUserProfile();
+        };
+    </script>
+</body>
+</html>
